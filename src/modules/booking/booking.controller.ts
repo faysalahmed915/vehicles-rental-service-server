@@ -54,3 +54,25 @@ export const updateBooking = async (req: Request, res: Response) => {
         res.status(500).json({ success: false, message: err.message });
     }
 };
+
+
+
+
+export const getSingleBooking = async (req: Request, res: Response) => {
+    try {
+        const user = req.user!;
+        const userId = (user as UserPayload)?.id;
+        const booking_id = parseInt(req.params.booking_id);
+
+        const booking = await bookingService.getSingleBooking(user?, booking_id);
+
+        res.status(200).json({
+            success: true,
+            message: "Booking retrieved successfully",
+            data: booking
+        });
+
+    } catch (err: any) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+};

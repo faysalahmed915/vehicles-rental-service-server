@@ -130,3 +130,44 @@ export const updateBookingStatus = async (bookingId: number, payload: UpdateBook
 
     return rows[0];
 };
+
+
+
+
+
+// Get single booking
+export const getSingleBooking = async (user: UserPayload, booking_id: number) => {
+    
+    const { rows } = await pool.query(`
+        SELECT b.*, 
+               v.vehicle_name, v.registration_number, v.type, v.daily_rent_price,
+               u.name AS customer_name, u.email AS customer_email
+        FROM bookings b
+        JOIN vehicles v ON b.vehicle_id = v.vehicle_id
+        JOIN users u ON b.customer_id = u.id
+        WHERE b.booking_id = $1
+    `, [booking_id]);
+
+    if (!rows[0]) throw new Error("Booking not found");
+
+    const booking = rows[0];
+
+    // Authorization: customers can only view their own booking
+    if (user.role === "customer" && booking.customer_id !== user.id) {
+        throw new Error("Forbidden: You cannot access this booking");
+    }
+
+    return {
+        ...booking,
+        vehicle: {
+            vehicle_name: booking.vehicle_name,
+            registration_number: booking.registration_number,
+            type: booking.type,
+            daily_rent_price: booking.daily_rent_price
+        },
+        customer: {
+            name: booking.customer_name,
+            email: booking.customer_email
+        }
+    };
+};
