@@ -2,6 +2,8 @@ import express, { Request, Response } from "express";
 import initDB, { pool } from "./config/db";
 import logger from "./middlewares/logger";
 import { userRoutes } from "./modules/user/user.routes";
+import { authRoutes } from "./modules/auth/auth.router";
+import { vehicleRoutes } from "./modules/vehicle/vehicle.route";
 
 const app = express();
 
@@ -20,7 +22,21 @@ app.get("/db-test", async (req, res) => {
 });
 
 
-app.use("/users", userRoutes);
+app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/vehicles", vehicleRoutes);
+// app.use("/api/v1/bookings", bookingRoutes);
+app.use("/api/v1/users", userRoutes);
+
+
+
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: "Route not found",
+    path: req.path,
+  });
+});
+
 
 
 export default app;
