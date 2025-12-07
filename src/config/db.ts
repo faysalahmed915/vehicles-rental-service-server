@@ -15,8 +15,8 @@ const initDB = async () => {
             id SERIAL PRIMARY KEY,
             name VARCHAR(100) NOT NULL,
             email VARCHAR(150) UNIQUE NOT NULL,
-            password TEXT NOT NULL,
-            phone VARCHAR(20),
+            password TEXT NOT NULL CHECK (LENGTH(password) >= 6),
+            phone VARCHAR(20) NOT NULL,
             role VARCHAR(20) CHECK (role IN ('admin', 'customer')),
             created_at TIMESTAMP DEFAULT NOW(),
             updated_at TIMESTAMP DEFAULT NOW()
@@ -30,9 +30,9 @@ const initDB = async () => {
         CREATE TABLE IF NOT EXISTS vehicles (
             vehicle_id SERIAL PRIMARY KEY,
             vehicle_name VARCHAR(100) NOT NULL,
-            type VARCHAR(50),
+            type VARCHAR(50) CHECK (type IN ('car', 'bike', 'van', 'suv')) NOT NULL,
             registration_number VARCHAR(50) UNIQUE NOT NULL,
-            daily_rent_price INT NOT NULL,
+            daily_rent_price INT NOT NULL CHECK (daily_rent_price > 0),
             availability_status VARCHAR(20) CHECK (availability_status IN ('available', 'booked')) DEFAULT 'available'
         );
     `);
@@ -47,7 +47,7 @@ const initDB = async () => {
             rent_start_date DATE NOT NULL,
             rent_end_date DATE NOT NULL,
             total_price NUMERIC(10, 2) NOT NULL,
-            status VARCHAR(20) CHECK (status IN ('booked', 'available')) DEFAULT 'available',
+            status VARCHAR(20) CHECK (status IN ('active', 'cancelled', 'returned')) DEFAULT 'active',
             created_at TIMESTAMP DEFAULT NOW(),
             updated_at TIMESTAMP DEFAULT NOW(),
             CHECK (rent_end_date >= rent_start_date)

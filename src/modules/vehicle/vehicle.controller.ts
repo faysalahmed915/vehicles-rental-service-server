@@ -22,6 +22,7 @@ const createVehicle = async (req: Request, res: Response) => {
 const getAllVehicles = async (req: Request, res: Response) => {
   try {
     const result = await vehicleService.getAllVehicles();
+    // console.log(result);
 
     res.status(200).json({
       success: true,
@@ -38,7 +39,8 @@ const getAllVehicles = async (req: Request, res: Response) => {
 
 const getSingleVehicle = async (req: Request, res: Response) => {
   try {
-    const id = req.params.id as string;
+    const id = req.params.vehicle_id as string;
+    console.log(id);
     const result = await vehicleService.getSingleVehicle(id);
 
     if (!result.rows.length) {
@@ -62,7 +64,7 @@ const getSingleVehicle = async (req: Request, res: Response) => {
 
 const updateVehicle = async (req: Request, res: Response) => {
   try {
-    const id = req.params.id as string;
+    const id = req.params.vehicle_id as string;
     const result = await vehicleService.updateVehicle(id, req.body);
 
     res.status(200).json({
