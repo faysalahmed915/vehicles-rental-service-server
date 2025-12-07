@@ -4,6 +4,7 @@ import logger from "./middlewares/logger";
 import { userRoutes } from "./modules/user/user.routes";
 import { authRoutes } from "./modules/auth/auth.router";
 import { vehicleRoutes } from "./modules/vehicle/vehicle.route";
+import { bookingRoutes } from "./modules/booking/booking.router";
 
 const app = express();
 
@@ -24,7 +25,7 @@ app.get("/db-test", async (req, res) => {
 
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/vehicles", vehicleRoutes);
-// app.use("/api/v1/bookings", bookingRoutes);
+app.use("/api/v1/bookings", bookingRoutes);
 app.use("/api/v1/users", userRoutes);
 
 

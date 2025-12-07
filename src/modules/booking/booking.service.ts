@@ -1,66 +1,106 @@
-import { pool } from "../../db";
-import { Booking } from "./booking.types";
+// import { pool } from "../../db";
+import { pool } from "../../config/db";
+import { Booking, CreateBookingDTO, UpdateBookingDTO, UserPayload } from "./booking.types";
 
-// create booking
-export const createBooking = async (data: {
-  customer_id: number;
-  vehicle_id: number;
-  rent_start_date: string;
-  rent_end_date: string;
-}) => {
-  const { customer_id, vehicle_id, rent_start_date, rent_end_date } = data;
-
-  // get vehicle daily price
-  const vehicleRes = await pool.query("SELECT daily_rent_price FROM vehicles WHERE id=$1", [vehicle_id]);
-  if (!vehicleRes.rows.length) throw new Error("Vehicle not found");
-
-  const dailyPrice = vehicleRes.rows[0].daily_rent_price;
-  const start = new Date(rent_start_date);
-  const end = new Date(rent_end_date);
-  const dayCount = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-  const total_price = dailyPrice * dayCount;
-
-  // insert booking
-  const result = await pool.query(
-    `INSERT INTO bookings (customer_id, vehicle_id, rent_start_date, rent_end_date, total_price) 
-     VALUES ($1,$2,$3,$4,$5) RETURNING *`,
-    [customer_id, vehicle_id, rent_start_date, rent_end_date, total_price]
-  );
-
-  // mark vehicle as booked
-  await pool.query("UPDATE vehicles SET availability_status='booked' WHERE id=$1", [vehicle_id]);
-
-  return result.rows[0];
+// Calculate total price
+const calculateTotalPrice = async (vehicle_id: number, start: string, end: string) => {
+    const { rows } = await pool.query(`SELECT daily_rent_price FROM vehicles WHERE id=$1`, [vehicle_id]);
+    if (!rows[0]) throw new Error("Vehicle not found");
+    const pricePerDay = rows[0].daily_rent_price;
+    const days = Math.ceil(
+        (new Date(end).getTime() - new Date(start).getTime()) / (1000 * 3600 * 24)
+    );
+    return pricePerDay * days;
 };
 
-// get bookings (role-based)
-export const getBookings = async (user: { id: number; role: string }) => {
-  let query = `
-    SELECT b.*, 
-           u.name AS customer_name, u.email AS customer_email,
-           v.vehicle_name, v.registration_number, v.type
-    FROM bookings b
-    JOIN users u ON b.customer_id=u.id
-    JOIN vehicles v ON b.vehicle_id=v.id
-  `;
+// Create booking
+export const createBooking = async (payload: CreateBookingDTO): Promise<Booking> => {
+    const total_price = await calculateTotalPrice(payload.vehicle_id, payload.rent_start_date, payload.rent_end_date) || 0;
 
-  const params: any[] = [];
-  if (user.role === "customer") {
-    query += " WHERE b.customer_id=$1";
-    params.push(user.id);
-  }
+      console.log(total_price);
 
-  const res = await pool.query(query, params);
+    const status = "booked";
 
-  return res.rows.map(row => ({
-    id: row.id,
-    customer_id: row.customer_id,
-    vehicle_id: row.vehicle_id,
-    rent_start_date: row.rent_start_date,
-    rent_end_date: row.rent_end_date,
-    total_price: row.total_price,
-    status: row.status,
-    customer: user.role === "admin" ? { name: row.customer_name, email: row.customer_email } : undefined,
-    vehicle: { vehicle_name: row.vehicle_name, registration_number: row.registration_number, type: row.type }
-  }));
+    const { rows } = await pool.query(
+        `INSERT INTO bookings(customer_id, vehicle_id, rent_start_date, rent_end_date, total_price, status)
+     VALUES($1,$2,$3,$4,$5,$6) RETURNING *`,
+        [payload.customer_id, payload.vehicle_id, payload.rent_start_date, payload.rent_end_date, total_price, status]
+    );
+
+
+    console.log("{rows}", rows);
+
+    // Update vehicle availability
+    await pool.query(`UPDATE vehicles SET availability_status='booked' WHERE id=$1`, [payload.vehicle_id]);
+
+    return rows[0];
+};
+
+// Get bookings
+export const getBookings = async (user: UserPayload): Promise<Booking[]> => {
+    if (user.role === "admin") {
+        const { rows } = await pool.query(`
+      SELECT b.*, 
+             v.vehicle_name, v.registration_number, v.type, v.daily_rent_price, v.availability_status,
+             u.name AS customer_name, u.email AS customer_email
+      FROM bookings b
+      JOIN vehicles v ON b.vehicle_id=v.id
+      JOIN users u ON b.customer_id=u.id
+      ORDER BY b.id DESC
+    `);
+
+        return rows.map(row => ({
+            ...row,
+            vehicle: {
+                vehicle_name: row.vehicle_name,
+                registration_number: row.registration_number,
+                type: row.type,
+                daily_rent_price: row.daily_rent_price,
+                availability_status: row.availability_status
+            },
+            customer: {
+                name: row.customer_name,
+                email: row.customer_email
+            }
+        }));
+    } else {
+        // customer sees only own bookings
+        const { rows } = await pool.query(`
+      SELECT b.*, 
+             v.vehicle_name, v.registration_number, v.type
+      FROM bookings b
+      JOIN vehicles v ON b.vehicle_id=v.id
+      WHERE b.customer_id=$1
+      ORDER BY b.id DESC
+    `, [user.id]);
+
+        return rows.map(row => ({
+            ...row,
+            vehicle: {
+                vehicle_name: row.vehicle_name,
+                registration_number: row.registration_number,
+                type: row.type
+            }
+        }));
+    }
+};
+
+// Update booking status
+export const updateBookingStatus = async (bookingId: number, payload: UpdateBookingDTO): Promise<Booking> => {
+    const { rows } = await pool.query(
+        `UPDATE bookings SET status=$1, updated_at=NOW() WHERE id=$2 RETURNING *`,
+        [payload.status, bookingId]
+    );
+
+    if (!rows[0]) throw new Error("Booking not found");
+
+    // Update vehicle availability if returned or cancelled
+    if (["returned", "cancelled"].includes(payload.status)) {
+        await pool.query(
+            `UPDATE vehicles SET availability_status='available' WHERE id=$1`,
+            [rows[0].vehicle_id]
+        );
+    }
+
+    return rows[0];
 };

@@ -7,8 +7,9 @@ export const pool = new Pool({
 
 });
 
-// users
+
 const initDB = async () => {
+    // users table
     await pool.query(`
         CREATE TABLE IF NOT EXISTS users (
             id SERIAL PRIMARY KEY,
@@ -27,12 +28,12 @@ const initDB = async () => {
     // vehicles
     await pool.query(`
         CREATE TABLE IF NOT EXISTS vehicles (
-            id SERIAL PRIMARY KEY,
+            vehicle_id SERIAL PRIMARY KEY,
             vehicle_name VARCHAR(100) NOT NULL,
             type VARCHAR(50),
             registration_number VARCHAR(50) UNIQUE NOT NULL,
             daily_rent_price INT NOT NULL,
-            availability_status VARCHAR(20) DEFAULT 'available'
+            availability_status VARCHAR(20) CHECK (availability_status IN ('available', 'booked')) DEFAULT 'available'
         );
     `);
 
@@ -40,9 +41,9 @@ const initDB = async () => {
     // bookings
     await pool.query(`
        CREATE TABLE IF NOT EXISTS bookings (
-            id SERIAL PRIMARY KEY,
+            booking_id SERIAL PRIMARY KEY,
             customer_id INT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
-            vehicle_id INT NOT NULL REFERENCES vehicles(id) ON DELETE RESTRICT,
+            vehicle_id INT NOT NULL REFERENCES vehicles(vehicle_id) ON DELETE RESTRICT,
             rent_start_date DATE NOT NULL,
             rent_end_date DATE NOT NULL,
             total_price NUMERIC(10, 2) NOT NULL,

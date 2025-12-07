@@ -1,21 +1,61 @@
 import { Request, Response } from "express";
 import * as bookingService from "./booking.service";
+import { UserPayload, CreateBookingDTO, UpdateBookingDTO } from "./booking.types";
 
 export const createBooking = async (req: Request, res: Response) => {
-  try {
-    const booking = await bookingService.createBooking(req.body);
-    res.status(201).json({ success: true, message: "Booking created successfully", data: booking });
-  } catch (err: any) {
-    res.status(500).json({ success: false, message: err.message });
-  }
+    try {
+
+        if (!req.user) {
+            return res.status(401).json({ success: false, message: "Unauthorized" });
+        }
+
+        const user = req.user as UserPayload;
+        // console.log({ user });
+
+        
+        const payload: CreateBookingDTO = { 
+            ...req.body, 
+            customer_id: user.id, 
+            status: "booked" 
+        };
+
+
+
+        console.log("Payload: yoo",{ payload });
+        
+        payload.customer_id = user.id;
+
+
+
+
+        const booking = await bookingService.createBooking(payload);
+        res.status(201).json({ success: true, message: "Booking created successfully", data: booking });
+    } catch (err: any) {
+        res.status(500).json({ success: false, message: err.message });
+    }
 };
 
 export const getBookings = async (req: Request, res: Response) => {
-  try {
-    const bookings = await bookingService.getBookings(req.user);
-    const msg = req.user.role === "admin" ? "Bookings retrieved successfully" : "Your bookings retrieved successfully";
-    res.status(200).json({ success: true, message: msg, data: bookings });
-  } catch (err: any) {
-    res.status(500).json({ success: false, message: err.message });
-  }
+    try {
+        if (!req.user) return res.status(401).json({ success: false, message: "Unauthorized" });
+        const user = req.user as UserPayload;
+
+        const bookings = await bookingService.getBookings(user);
+        const msg = user.role === "admin" ? "Bookings retrieved successfully" : "Your bookings retrieved successfully";
+
+        res.status(200).json({ success: true, message: msg, data: bookings });
+    } catch (err: any) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+export const updateBooking = async (req: Request, res: Response) => {
+    try {
+        const bookingId = parseInt(req.params.bookingId as string, 10);
+        const payload: UpdateBookingDTO = req.body;
+        const updatedBooking = await bookingService.updateBookingStatus(bookingId, payload);
+        res.status(200).json({ success: true, message: "Booking updated successfully", data: updatedBooking });
+    } catch (err: any) {
+        res.status(500).json({ success: false, message: err.message });
+    }
 };
