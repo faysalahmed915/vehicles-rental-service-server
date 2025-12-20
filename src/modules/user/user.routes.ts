@@ -11,14 +11,14 @@ const router = express.Router();
 
 // routes -> controller -> service
 
-router.post("/", userControllers.createUser);
+// router.post("/", userControllers.createUser);
 
 router.get("/", logger, auth("admin"), userControllers.getUser);
 
-router.get("/:id", auth("admin", "customer"), userControllers.getSingleUser);
+router.get("/:userId", auth("admin", "customer"), userControllers.getSingleUser);
 
-router.put("/:id", userControllers.updateUser);
+router.put("/:userId", userControllers.updateUser);
 
-router.delete("/:id", userControllers.deleteUser);
+router.delete("/:userId", userControllers.deleteUser);
 
 export const userRoutes = router;

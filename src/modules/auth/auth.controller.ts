@@ -1,6 +1,29 @@
 import { Request, Response } from "express";
 import { authServices } from "./auth.service";
 
+
+
+const signup = async (req: Request, res: Response) => {
+  try {
+    const result = await authServices.signupUser(req.body);
+    console.log(result.rows[0]);
+    res.status(201).json({
+      success: true,
+      message: "User registered Successfully",
+      data: result.rows[0],
+    });
+  } catch (err: any) {
+    console.log(err);
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+
+
+
+
 const signinUser = async (req: Request, res: Response) => {
   const { email, password } = req.body;
   // console.log(email, password);
@@ -28,5 +51,6 @@ const signinUser = async (req: Request, res: Response) => {
 };
 
 export const authController = {
+  signup,
   signinUser,
 };

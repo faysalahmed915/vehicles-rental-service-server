@@ -6,11 +6,11 @@ const router = Router();
 
 // admin only routes
 router.post("/", auth("admin"), vehicleController.createVehicle);
-router.put("/:vehicle_id", auth("admin"), vehicleController.updateVehicle);
-router.delete("/:vehicle_id", auth("admin"), vehicleController.deleteVehicle);
+router.put("/:vehicleId", auth("admin"), vehicleController.updateVehicle);
+router.delete("/:vehicleId", auth("admin"), vehicleController.deleteVehicle);
 
 // public routes
 router.get("/", vehicleController.getAllVehicles);
-router.get("/:vehicle_id", vehicleController.getSingleVehicle);
+router.get("/:vehicleId", vehicleController.getSingleVehicle);
 
 export const vehicleRoutes = router;

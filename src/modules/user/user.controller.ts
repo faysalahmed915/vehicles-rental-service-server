@@ -1,24 +1,24 @@
 import { Request, Response } from "express";
 import { userServices } from "./user.service";
-import { ChildProcess } from "child_process";
+// import { ChildProcess } from "child_process";
 
-const createUser = async (req: Request, res: Response) => {
-  try {
-    const result = await userServices.createUser(req.body);
-    console.log(result.rows[0]);
-    res.status(201).json({
-      success: true,
-      message: "Data Instered Successfully",
-      data: result.rows[0],
-    });
-  } catch (err: any) {
-    console.log(err);
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
-  }
-};
+// const createUser = async (req: Request, res: Response) => {
+//   try {
+//     const result = await userServices.createUser(req.body);
+//     console.log(result.rows[0]);
+//     res.status(201).json({
+//       success: true,
+//       message: "Data Instered Successfully",
+//       data: result.rows[0],
+//     });
+//   } catch (err: any) {
+//     console.log(err);
+//     res.status(500).json({
+//       success: false,
+//       message: err.message,
+//     });
+//   }
+// };
 
 const getUser = async (req: Request, res: Response) => {
   try {
@@ -148,7 +148,7 @@ const deleteUser = async (req: Request, res: Response) => {
 };
 
 export const userControllers = {
-  createUser,
+  // createUser,
   getUser,
   getSingleUser,
   updateUser,

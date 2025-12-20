@@ -60,11 +60,15 @@ export const updateBooking = async (req: Request, res: Response) => {
 
 export const getSingleBooking = async (req: Request, res: Response) => {
     try {
-        const user = req.user!;
-        const userId = (user as UserPayload)?.id;
-        const booking_id = parseInt(req.params.booking_id);
+        const user = req.user as UserPayload;
+        const booking_id_param = req.params.booking_id;
+        if (!booking_id_param) {
+             return res.status(400).json({ success: false, message: "Booking ID is required" });
+        }
+        // const userId = (user as UserPayload)?.id;
+        const booking_id = parseInt(booking_id_param, 10);
 
-        const booking = await bookingService.getSingleBooking(user?, booking_id);
+        const booking = await bookingService.getSingleBooking(user, booking_id);
 
         res.status(200).json({
             success: true,
